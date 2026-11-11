@@ -1,6 +1,7 @@
 
 package com.factory.robot;
 
+import com.factory.robot.enums.MachineryState;
 import com.factory.robot.exception.RobotSafetyException;
 
 import java.util.Scanner;
@@ -69,33 +70,13 @@ public class FactoryRobotHazardAnalyzer {
             );
         }
 
-        // Validates machinery state.
-        if (!machineryState.equals("Worn")
-                && !machineryState.equals("Faulty")
-                && !machineryState.equals("Critical")) {
+        // Converts the machinery state into an enum.
+        MachineryState state = MachineryState.fromString(machineryState);
 
-            throw new RobotSafetyException(
-                    "Error: Unsupported machinery state"
-            );
-        }
-
-        double machineRiskFactor =
-                getMachineRiskFactor(machineryState);
+        double machineRiskFactor = state.getRiskFactor();
 
         // Calculates the hazard risk using the given formula.
         return ((1.0 - armPrecision) * 15.0)
                 + (workerDensity * machineRiskFactor);
-    }
-
-    // Returns the risk factor associated with the machinery state.
-    private static double getMachineRiskFactor(String machineryState) {
-
-        if (machineryState.equals("Worn")) {
-            return 1.3;
-        } else if (machineryState.equals("Faulty")) {
-            return 2.0;
-        } else {
-            return 3.0;
-        }
     }
 }
