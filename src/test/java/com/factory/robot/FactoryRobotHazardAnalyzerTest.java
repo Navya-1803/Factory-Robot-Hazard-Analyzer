@@ -3,89 +3,84 @@ package com.factory.robot;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.PrintStream;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class FactoryRobotHazardAnalyzerTest {
 
-    // Verifies hazard calculation for valid inputs.
+    // Verifies hazard risk calculation for worn machinery.
     @Test
-    void shouldCalculateRiskForValidInputs() {
+    void shouldCalculateRiskForWornMachinery() {
 
-        String output = executeApplication("0.5\n10\nCritical\n");
+        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
+                0.5, 10, "Worn"
+        );
 
-        assertTrue(output.contains("Robot Hazard Risk Score: 37.5"));
+        assertEquals(20.5, risk, 0.001);
     }
 
-    // Verifies validation of arm precision below the permitted range.
+    // Verifies hazard risk calculation for faulty machinery.
+    @Test
+    void shouldCalculateRiskForFaultyMachinery() {
+
+        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
+                0.5, 10, "Faulty"
+        );
+
+        assertEquals(27.5, risk, 0.001);
+    }
+
+    // Verifies hazard risk calculation for critical machinery.
+    @Test
+    void shouldCalculateRiskForCriticalMachinery() {
+
+        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
+                0.5, 10, "Critical"
+        );
+
+        assertEquals(37.5, risk, 0.001);
+    }
+
+    // Verifies that invalid arm precision is rejected.
     @Test
     void shouldRejectInvalidArmPrecision() {
 
-        String output = executeApplication("1.3\n10\nWorn\n");
+        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
+                1.3, 10, "Worn"
+        );
 
-        assertTrue(output.contains(
-                "Error: Arm precision must be 0.0-1.0"
-        ));
+        assertEquals(-1.0, risk);
     }
 
-    // Verifies validation of worker density above the permitted range.
+    // Verifies that invalid worker density is rejected.
     @Test
     void shouldRejectInvalidWorkerDensity() {
 
-        String output = executeApplication("0.7\n26\nCritical\n");
+        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
+                0.7, 26, "Critical"
+        );
 
-        assertTrue(output.contains(
-                "Error: Worker density must be 1-20"
-        ));
+        assertEquals(-1.0, risk);
     }
 
-    // Verifies validation of unsupported machinery states.
+    // Verifies that unsupported machinery states are rejected.
     @Test
     void shouldRejectUnsupportedMachineryState() {
 
-        String output = executeApplication("0.3\n14\nOptimal\n");
+        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
+                0.3, 14, "Optimal"
+        );
 
-        assertTrue(output.contains(
-                "Error: Unsupported machinery state"
-        ));
+        assertEquals(-1.0, risk);
     }
 
-    // Verifies that minimum and maximum boundary values are accepted.
+    // Verifies that boundary values are accepted.
     @Test
     void shouldAcceptBoundaryValues() {
 
-        String output = executeApplication("1.0\n20\nCritical\n");
-
-        assertTrue(output.contains("Robot Hazard Risk Score: 60.0"));
-    }
-
-    // Executes the application with simulated input and captures its output.
-    private String executeApplication(String simulatedInput) {
-
-        InputStream originalInput = System.in;
-        PrintStream originalOutput = System.out;
-
-        ByteArrayInputStream input = new ByteArrayInputStream(
-                simulatedInput.getBytes()
+        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
+                1.0, 20, "Critical"
         );
 
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-        try {
-            System.setIn(input);
-            System.setOut(new PrintStream(output));
-
-            FactoryRobotHazardAnalyzer.main(new String[]{});
-
-            return output.toString();
-
-        } finally {
-            System.setIn(originalInput);
-            System.setOut(originalOutput);
-        }
+        assertEquals(60.0, risk, 0.001);
     }
 }
