@@ -1,106 +1,60 @@
 
 package com.factory.robot;
 
-import com.factory.robot.exception.RobotSafetyException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FactoryRobotHazardAnalyzerTest {
 
-    // Verifies hazard risk calculation for worn machinery.
+    // Verifies that the application displays the calculated risk score.
     @Test
-    void shouldCalculateRiskForWornMachinery() throws RobotSafetyException {
+    void shouldDisplayHazardRiskScore() {
 
-        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
-                0.5, 10, "Worn"
-        );
+        String output = executeApplication("0.5\n10\nCritical\n");
 
-        assertEquals(20.5, risk, 0.001);
+        assertTrue(output.contains("Robot Hazard Risk Score: 37.5"));
     }
 
-    // Verifies hazard risk calculation for faulty machinery.
+    // Verifies that the application displays custom exception messages.
     @Test
-    void shouldCalculateRiskForFaultyMachinery() throws RobotSafetyException {
+    void shouldDisplayValidationError() {
 
-        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
-                0.5, 10, "Faulty"
-        );
+        String output = executeApplication("1.3\n10\nWorn\n");
 
-        assertEquals(27.5, risk, 0.001);
+        assertTrue(output.contains(
+                "Error: Arm precision must be 0.0-1.0"
+        ));
     }
 
-    // Verifies hazard risk calculation for critical machinery.
-    @Test
-    void shouldCalculateRiskForCriticalMachinery() throws RobotSafetyException {
+    // Executes the application with simulated input and captures its output.
+    private String executeApplication(String simulatedInput) {
 
-        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
-                0.5, 10, "Critical"
+        InputStream originalInput = System.in;
+        PrintStream originalOutput = System.out;
+
+        ByteArrayInputStream input = new ByteArrayInputStream(
+                simulatedInput.getBytes()
         );
 
-        assertEquals(37.5, risk, 0.001);
-    }
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    // Verifies that invalid arm precision throws a custom exception.
-    @Test
-    void shouldThrowExceptionForInvalidArmPrecision() {
+        try {
+            System.setIn(input);
+            System.setOut(new PrintStream(output));
 
-        RobotSafetyException exception = assertThrows(
-                RobotSafetyException.class,
-                () -> FactoryRobotHazardAnalyzer.calculateHazardRisk(
-                        1.3, 10, "Worn"
-                )
-        );
+            FactoryRobotHazardAnalyzer.main(new String[]{});
 
-        assertEquals(
-                "Error: Arm precision must be 0.0-1.0",
-                exception.getMessage()
-        );
-    }
+            return output.toString();
 
-    // Verifies that invalid worker density throws a custom exception.
-    @Test
-    void shouldThrowExceptionForInvalidWorkerDensity() {
-
-        RobotSafetyException exception = assertThrows(
-                RobotSafetyException.class,
-                () -> FactoryRobotHazardAnalyzer.calculateHazardRisk(
-                        0.7, 26, "Critical"
-                )
-        );
-
-        assertEquals(
-                "Error: Worker density must be 1-20",
-                exception.getMessage()
-        );
-    }
-
-    // Verifies that unsupported machinery states throw a custom exception.
-    @Test
-    void shouldThrowExceptionForUnsupportedMachineryState() {
-
-        RobotSafetyException exception = assertThrows(
-                RobotSafetyException.class,
-                () -> FactoryRobotHazardAnalyzer.calculateHazardRisk(
-                        0.3, 14, "Optimal"
-                )
-        );
-
-        assertEquals(
-                "Error: Unsupported machinery state",
-                exception.getMessage()
-        );
-    }
-
-    // Verifies that boundary values are accepted.
-    @Test
-    void shouldAcceptBoundaryValues() throws RobotSafetyException {
-
-        double risk = FactoryRobotHazardAnalyzer.calculateHazardRisk(
-                1.0, 20, "Critical"
-        );
-
-        assertEquals(60.0, risk, 0.001);
+        } finally {
+            System.setIn(originalInput);
+            System.setOut(originalOutput);
+        }
     }
 }

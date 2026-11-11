@@ -1,8 +1,11 @@
 
 package com.factory.robot;
 
-import com.factory.robot.enums.MachineryState;
+import com.factory.robot.auditor.RobotHazardAuditor;
 import com.factory.robot.exception.RobotSafetyException;
+import com.factory.robot.factory.MachineryRiskFactory;
+import com.factory.robot.model.RobotHazardInput;
+import com.factory.robot.validation.HazardInputValidator;
 
 import java.util.Scanner;
 
@@ -29,14 +32,25 @@ public class FactoryRobotHazardAnalyzer {
         System.out.println("Enter Machinery State:");
         String machineryState = scanner.nextLine();
 
+        RobotHazardInput input = new RobotHazardInput(
+                armPrecision,
+                workerDensity,
+                machineryState
+        );
+
+        HazardInputValidator validator = new HazardInputValidator();
+
+        MachineryRiskFactory riskFactory = new MachineryRiskFactory();
+
+        RobotHazardAuditor auditor = new RobotHazardAuditor(
+                validator,
+                riskFactory
+        );
+
         try {
 
             // Calculates the hazard risk score.
-            double hazardRisk = calculateHazardRisk(
-                    armPrecision,
-                    workerDensity,
-                    machineryState
-            );
+            double hazardRisk = auditor.calculateHazardRisk(input);
 
             System.out.println("Robot Hazard Risk Score: " + hazardRisk);
 
@@ -45,38 +59,5 @@ public class FactoryRobotHazardAnalyzer {
             // Displays the custom exception message.
             System.out.println(exception.getMessage());
         }
-    }
-
-    // Validates inputs and calculates the hazard risk score.
-    public static double calculateHazardRisk(
-            double armPrecision,
-            int workerDensity,
-            String machineryState)
-            throws RobotSafetyException {
-
-        // Validates arm precision.
-        if (armPrecision < 0.0 || armPrecision > 1.0) {
-
-            throw new RobotSafetyException(
-                    "Error: Arm precision must be 0.0-1.0"
-            );
-        }
-
-        // Validates worker density.
-        if (workerDensity < 1 || workerDensity > 20) {
-
-            throw new RobotSafetyException(
-                    "Error: Worker density must be 1-20"
-            );
-        }
-
-        // Converts the machinery state into an enum.
-        MachineryState state = MachineryState.fromString(machineryState);
-
-        double machineRiskFactor = state.getRiskFactor();
-
-        // Calculates the hazard risk using the given formula.
-        return ((1.0 - armPrecision) * 15.0)
-                + (workerDensity * machineRiskFactor);
     }
 }
